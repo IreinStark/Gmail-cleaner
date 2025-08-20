@@ -10,6 +10,7 @@ python -m gmail_cleaner
 python -m gmail_cleaner --max-emails 100 --batch-size 15 --dry-run false
 python -m gmail_cleaner --query "category:promotions older_than:7d"
 python -m gmail_cleaner --demo true  # Simulated run without Gmail/Gemini
+python -m gmail_cleaner --confidence-threshold 0.6 --safe-archive false  # AI DELETE moves to Trash when confidence>=0.6
 ```
 
 ### Purge all promotions (no AI)

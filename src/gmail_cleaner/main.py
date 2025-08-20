@@ -28,6 +28,8 @@ def run(
 	batch_size: Optional[int] = typer.Option(None, help="Batch size"),
 	query: Optional[str] = typer.Option(None, help="Gmail search query"),
 	dry_run: Optional[bool] = typer.Option(None, help="Dry run mode"),
+	confidence_threshold: Optional[float] = typer.Option(None, help="AI delete confidence threshold (e.g., 0.6)"),
+	safe_archive: Optional[bool] = typer.Option(None, help="If True, AI DELETE will archive instead of trash"),
 	demo: bool = typer.Option(False, help="Run a simulated demo without real APIs"),
 ):
 	config: AppConfig = load_config()
@@ -39,6 +41,10 @@ def run(
 		config.gmail_query = query
 	if dry_run is not None:
 		config.dry_run = dry_run
+	if confidence_threshold is not None:
+		config.confidence_threshold = confidence_threshold
+	if safe_archive is not None:
+		config.safe_archive_mode = safe_archive
 
 	if demo:
 		print("[yellow]Demo mode: using simulated Gmail and classifier[/yellow]")
