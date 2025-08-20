@@ -9,6 +9,7 @@ python -m gmail_cleaner
 ```bash
 python -m gmail_cleaner --max-emails 100 --batch-size 15 --dry-run false
 python -m gmail_cleaner --query "category:promotions older_than:7d"
+python -m gmail_cleaner --demo true  # Simulated run without Gmail/Gemini
 ```
 
 ### Dry Run
