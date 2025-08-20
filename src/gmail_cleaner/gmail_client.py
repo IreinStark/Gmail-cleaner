@@ -23,18 +23,19 @@ class GmailLabel:
 class GmailClient:
 	"""Wrapper for Gmail API operations with OAuth handling."""
 
-	def __init__(self, credentials_path: str, token_path: str) -> None:
+	def __init__(self, credentials_path: str, token_path: str, creds_override: Optional[Credentials] = None) -> None:
 		self.credentials_path = credentials_path
 		self.token_path = token_path
-		self.creds: Optional[Credentials] = None
+		self.creds: Optional[Credentials] = creds_override
 		self.service = None
 		self._label_cache_by_name: Dict[str, GmailLabel] = {}
 
 	def authenticate(self) -> bool:
 		"""Authenticate with OAuth 2.0 and build the Gmail service client."""
-		creds = None
+		creds = self.creds
 		try:
-			creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
+			if creds is None:
+				creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
 		except Exception:
 			creds = None
 

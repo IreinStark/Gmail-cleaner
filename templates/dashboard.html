@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gmail AI Cleaner - Dashboard</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      .container { max-width: 900px; margin: 0 auto; }
+      button { padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #ccc; background: #f7f7f7; }
+      pre { background: #0b1020; color: #d9e0ee; padding: 1rem; border-radius: 8px; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Dashboard</h1>
+      <p>Run a dry run first, then apply.</p>
+      <div>
+        <button onclick="runClean(true)">Dry Run (50)</button>
+        <button onclick="runClean(false)">Apply (50)</button>
+      </div>
+      <h3>Result</h3>
+      <pre id="out">Click a button to start.</pre>
+    </div>
+    <script>
+      async function runClean(dryRun) {
+        const resp = await fetch(`/clean?max_emails=50&dry_run=${dryRun ? 'true' : 'false'}`);
+        const data = await resp.json();
+        document.getElementById('out').textContent = JSON.stringify(data, null, 2);
+      }
+    </script>
+  </body>
+  </html>
+

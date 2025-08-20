@@ -23,6 +23,14 @@ pip install -r requirements.txt
 python -m gmail_cleaner --dry-run true
 ```
 
+### Web App (experimental)
+- Start server
+```bash
+uvicorn gmail_cleaner.webapp:app --reload
+```
+- Navigate to http://127.0.0.1:8000/ and click "Continue with Google"
+- Run a dry run on the dashboard, review decisions, then apply
+
 See `docs/setup.md` and `docs/usage.md` for full details.
 
 ### Repository Layout
