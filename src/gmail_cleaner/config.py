@@ -20,6 +20,9 @@ class AppConfig:
 	keep_label: str = "AI_KEEP"
 	archive_label: str = "AI_ARCHIVED"
 	review_label: str = "AI_REVIEW"
+	verbose: bool = False
+	cache_path: str = ".gmail_cleaner_cache.json"
+	enable_cache: bool = True
 
 
 def _env_bool(value: Optional[str], default: bool) -> bool:
@@ -45,5 +48,8 @@ def load_config() -> AppConfig:
 		keep_label=os.getenv("KEEP_LABEL", "AI_KEEP"),
 		archive_label=os.getenv("ARCHIVE_LABEL", "AI_ARCHIVED"),
 		review_label=os.getenv("REVIEW_LABEL", "AI_REVIEW"),
+		verbose=_env_bool(os.getenv("VERBOSE"), False),
+		cache_path=os.getenv("CACHE_PATH", ".gmail_cleaner_cache.json"),
+		enable_cache=_env_bool(os.getenv("ENABLE_CACHE"), True),
 	)
 

@@ -13,6 +13,7 @@ class EmailProcessor:
 		self.rate = rate_limiter
 		self.config = config
 		self._label_ids: Dict[str, str] = {}
+		self._cache_processed: Dict[str, bool] = {}
 
 	def _ensure_labels(self) -> None:
 		for label_name in [self.config.keep_label, self.config.archive_label, self.config.review_label]:
@@ -27,6 +28,9 @@ class EmailProcessor:
 		}
 		self._ensure_labels()
 		for msg_id in email_ids:
+			# Skip already processed messages if caching is enabled
+			if self.config.enable_cache and self._cache_processed.get(msg_id):
+				continue
 			self.rate.wait_if_needed()
 			try:
 				meta = self.gmail.get_email_metadata(msg_id)
@@ -46,6 +50,8 @@ class EmailProcessor:
 					decision["action"] = "ARCHIVE"
 				d = {"id": msg_id, **decision}
 				results["decisions"].append(d)
+				if self.config.enable_cache:
+					self._cache_processed[msg_id] = True
 			except Exception as e:
 				results["errors"].append({"id": msg_id, "step": "classify", "error": str(e)})
 				continue
@@ -66,20 +72,21 @@ class EmailProcessor:
 			)
 			try:
 				if not dry_run:
-					self.rate.wait_if_needed()
+					# Slight spacing between API calls
+					self.rate.wait_if_needed(min_delay=0.25)
 					self.gmail.apply_label(msg_id, self._label_ids[label_to_apply])
 					self.rate.add_request()
 					if action == "ARCHIVE":
-						self.rate.wait_if_needed()
+						self.rate.wait_if_needed(min_delay=0.25)
 						self.gmail.archive_email(msg_id)
 						self.rate.add_request()
 					elif action == "DELETE":
 						if self.config.safe_archive_mode:
-							self.rate.wait_if_needed()
+							self.rate.wait_if_needed(min_delay=0.25)
 							self.gmail.archive_email(msg_id)
 							self.rate.add_request()
 						else:
-							self.rate.wait_if_needed()
+							self.rate.wait_if_needed(min_delay=0.25)
 							self.gmail.delete_email(msg_id)
 							self.rate.add_request()
 				applied[action] = applied.get(action, 0) + 1

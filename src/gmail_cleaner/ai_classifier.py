@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import json
 import google.generativeai as genai
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception_type
 
 
 class EmailClassifier:
@@ -11,7 +11,7 @@ class EmailClassifier:
 		genai.configure(api_key=api_key)
 		self.model = genai.GenerativeModel("gemini-1.5-flash")
 
-	@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8), reraise=True)
+	@retry(stop=stop_after_attempt(5), wait=wait_exponential_jitter(exp_base=2, max=20), reraise=True)
 	def classify_email(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
 		prompt = self._prepare_prompt(email_data)
 		response = self.model.generate_content(prompt)
@@ -38,19 +38,29 @@ class EmailClassifier:
 		return f"{instruction}\nEmail JSON:\n{json.dumps(payload)}"
 
 	def _parse_ai_response(self, response_text: str) -> Dict[str, Any]:
-		try:
-			data = json.loads(response_text)
-		except json.JSONDecodeError:
-			# Attempt to recover from codeblock-wrapped JSON
-			clean = response_text.strip()
-			if clean.startswith("```") and clean.endswith("```"):
-				clean = clean.strip("`\n").split("\n", 1)[-1]
-				try:
-					data = json.loads(clean)
-				except Exception:
-					data = {}
-			else:
-				data = {}
+		# Normalize common LLM response wrappers and extract JSON
+		candidates = []
+		text = response_text.strip()
+		candidates.append(text)
+		if text.startswith("```"):
+			# strip ```json ... ``` or ``` ... ```
+			body = text.strip("`\n")
+			if "\n" in body:
+				body = body.split("\n", 1)[1]
+			candidates.append(body.strip())
+		# Try to locate a JSON object substring
+		start = text.find("{")
+		end = text.rfind("}")
+		if start != -1 and end != -1 and end > start:
+			candidates.append(text[start:end+1])
+
+		data = {}
+		for cand in candidates:
+			try:
+				data = json.loads(cand)
+				break
+			except Exception:
+				continue
 
 		action = str(data.get("action", "ARCHIVE")).upper()
 		if action not in {"KEEP", "ARCHIVE", "DELETE"}:

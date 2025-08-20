@@ -23,8 +23,9 @@ class RateLimiter:
 		elapsed = time.time() - oldest
 		return max(0.0, self.time_window - elapsed)
 
-	def wait_if_needed(self) -> None:
-		wait_seconds = self.get_wait_time()
+	def wait_if_needed(self, min_delay: float = 0.0) -> None:
+		"""Wait long enough to respect the window and ensure a minimum spacing."""
+		wait_seconds = max(self.get_wait_time(), min_delay)
 		if wait_seconds > 0:
 			time.sleep(wait_seconds)
 

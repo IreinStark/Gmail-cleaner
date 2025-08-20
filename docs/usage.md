@@ -25,6 +25,15 @@ python -m gmail_cleaner purge --dry-run false --max-emails 200
 python -m gmail_cleaner purge --dry-run false --hard-delete true
 ```
 
+### Verbose and caching
+```bash
+# Verbose logging via env var
+VERBOSE=true python -m gmail_cleaner --max-emails 20
+
+# Disable local cache
+ENABLE_CACHE=false python -m gmail_cleaner --max-emails 20
+```
+
 ### Dry Run
 Enabled by default; prints intended actions and labels without modifying emails.
 
