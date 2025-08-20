@@ -30,6 +30,7 @@ def run(
 	dry_run: Optional[bool] = typer.Option(None, help="Dry run mode"),
 	confidence_threshold: Optional[float] = typer.Option(None, help="AI delete confidence threshold (e.g., 0.6)"),
 	safe_archive: Optional[bool] = typer.Option(None, help="If True, AI DELETE will archive instead of trash"),
+	verbose: Optional[bool] = typer.Option(None, help="Verbose error output"),
 	demo: bool = typer.Option(False, help="Run a simulated demo without real APIs"),
 ):
 	config: AppConfig = load_config()
@@ -45,6 +46,8 @@ def run(
 		config.confidence_threshold = confidence_threshold
 	if safe_archive is not None:
 		config.safe_archive_mode = safe_archive
+	if verbose is not None:
+		config.verbose = verbose
 
 	if demo:
 		print("[yellow]Demo mode: using simulated Gmail and classifier[/yellow]")
@@ -75,6 +78,9 @@ def run(
 			apply_summary = processor.apply_actions(results["decisions"], dry_run=False)
 			results["applied"] = apply_summary.get("applied", results.get("applied", {}))
 		print(processor.generate_summary(results))
+		if config.verbose and results.get("errors"):
+			for err in results["errors"]:
+				print(f"[red]Error[/red] id={err.get('id')} step={err.get('step')} msg={err.get('error')}")
 		if batch_index < len(batches):
 			print(f"Waiting {config.batch_delay_seconds}s before next batch (rate limiting)...")
 			time.sleep(config.batch_delay_seconds)
