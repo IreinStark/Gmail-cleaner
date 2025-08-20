@@ -115,6 +115,13 @@ class GmailClient:
 
 	@retry(wait=wait_exponential(multiplier=1, min=1, max=8), stop=stop_after_attempt(3), reraise=True,
 	       retry=retry_if_exception_type(HttpError))
+	def hard_delete_email(self, msg_id: str) -> bool:
+		"""Permanently delete a message (cannot be undone)."""
+		self.service.users().messages().delete(userId="me", id=msg_id).execute()
+		return True
+
+	@retry(wait=wait_exponential(multiplier=1, min=1, max=8), stop=stop_after_attempt(3), reraise=True,
+	       retry=retry_if_exception_type(HttpError))
 	def create_label(self, label_name: str) -> str:
 		"""Create a Gmail label and return its ID (or existing one)."""
 		# Return cached id if available

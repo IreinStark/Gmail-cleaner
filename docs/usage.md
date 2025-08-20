@@ -12,6 +12,18 @@ python -m gmail_cleaner --query "category:promotions older_than:7d"
 python -m gmail_cleaner --demo true  # Simulated run without Gmail/Gemini
 ```
 
+### Purge all promotions (no AI)
+```bash
+# Dry run (default): show how many would be deleted
+python -m gmail_cleaner purge --query "category:promotions older_than:7d"
+
+# Move to Trash (apply changes)
+python -m gmail_cleaner purge --dry-run false --max-emails 200
+
+# Permanently delete (irreversible)
+python -m gmail_cleaner purge --dry-run false --hard-delete true
+```
+
 ### Dry Run
 Enabled by default; prints intended actions and labels without modifying emails.
 

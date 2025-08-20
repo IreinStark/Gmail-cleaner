@@ -76,5 +76,59 @@ def run(
 	print("\n[green]Done.[/green]")
 
 
+@app.command()
+def purge(
+	max_emails: Optional[int] = typer.Option(None, help="Max emails to purge in this session"),
+	batch_size: Optional[int] = typer.Option(None, help="Batch size"),
+	query: Optional[str] = typer.Option("category:promotions", help="Gmail search query to select emails to purge"),
+	dry_run: bool = typer.Option(True, help="Dry run mode (no changes)"),
+	hard_delete: bool = typer.Option(False, help="Permanently delete instead of moving to Trash"),
+):
+	"""Delete all promotional emails matching the query (bypasses AI)."""
+	config: AppConfig = load_config()
+	if max_emails is not None:
+		config.max_emails_per_session = max_emails
+	if batch_size is not None:
+		config.batch_size = batch_size
+	if query is not None:
+		config.gmail_query = query
+	config.dry_run = dry_run
+
+	gmail = GmailClient(config.gmail_credentials_path, config.gmail_token_path)
+	print("Authenticating with Gmail...")
+	gmail.authenticate()
+	print(f"Querying emails with: [cyan]{config.gmail_query}[/cyan]")
+	ids = gmail.list_promotional_emails(config.gmail_query, config.max_emails_per_session)
+	print(f"Found {len(ids)} emails to purge")
+
+	rate = RateLimiter(max_requests=config.max_requests_per_minute, time_window=60)
+
+	batches = [ids[i : i + config.batch_size] for i in range(0, len(ids), config.batch_size)]
+	deleted = 0
+	errors = 0
+	for batch_index, batch in enumerate(batches, start=1):
+		print(f"\n[bold]Batch {batch_index}/{len(batches)}[/bold] (size {len(batch)})")
+		for msg_id in batch:
+			try:
+				if not dry_run:
+					rate.wait_if_needed()
+					if hard_delete:
+						gmail.hard_delete_email(msg_id)
+					else:
+						gmail.delete_email(msg_id)
+					rate.add_request()
+				deleted += 1
+			except Exception as e:
+				errors += 1
+				print(f"[red]Error purging {msg_id}: {e}[/red]")
+		print(f"Batch summary: deleted={deleted} errors={errors} (cumulative)")
+		if batch_index < len(batches):
+			print(f"Waiting {config.batch_delay_seconds}s before next batch (rate limiting)...")
+			time.sleep(config.batch_delay_seconds)
+
+	action = "would delete" if dry_run else ("hard-deleted" if hard_delete else "moved to Trash")
+	print(f"\n[green]Done.[/green] {deleted} emails {action}. Errors: {errors}")
+
+
 if __name__ == "__main__":
 	app()
