@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 
 
@@ -23,6 +23,8 @@ class AppConfig:
 	verbose: bool = False
 	cache_path: str = ".gmail_cleaner_cache.json"
 	enable_cache: bool = True
+	session_secret: str = "change-me"
+	allowed_origins: List[str] = None  # type: ignore[assignment]
 
 
 def _env_bool(value: Optional[str], default: bool) -> bool:
@@ -33,6 +35,7 @@ def _env_bool(value: Optional[str], default: bool) -> bool:
 
 def load_config() -> AppConfig:
 	load_dotenv()
+	origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 	return AppConfig(
 		gmail_credentials_path=os.getenv("GMAIL_CREDENTIALS_PATH", "credentials.json"),
 		gmail_token_path=os.getenv("GMAIL_TOKEN_PATH", "token.json"),
@@ -51,5 +54,7 @@ def load_config() -> AppConfig:
 		verbose=_env_bool(os.getenv("VERBOSE"), False),
 		cache_path=os.getenv("CACHE_PATH", ".gmail_cleaner_cache.json"),
 		enable_cache=_env_bool(os.getenv("ENABLE_CACHE"), True),
+		session_secret=os.getenv("SESSION_SECRET", "change-me"),
+		allowed_origins=[o.strip() for o in origins.split(",") if o.strip()],
 	)
 
